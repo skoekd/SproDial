@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espresso Shot Tracker & Analyzer</title>
+    <link rel="stylesheet" href="css/styles-enhanced.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header with Quick Stats -->
+        <header class="app-header">
+            <div class="header-main">
+                <h1>☕ Espresso Shot Tracker</h1>
+                <div class="quick-stats" id="headerStats">
+                    <div class="stat-pill">
+                        <span class="stat-label">Today:</span>
+                        <span class="stat-value" id="todayShots">0</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="stat-label">Avg:</span>
+                        <span class="stat-value" id="avgRating">-</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="stat-label">Coffee:</span>
+                        <span class="stat-value" id="currentCoffeeShort">None</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Simplified Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="dashboard">
+                <span class="icon">📊</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="tab-btn" data-tab="shot">
+                <span class="icon">☕</span>
+                <span>Log Shot</span>
+            </button>
+            <button class="tab-btn" data-tab="setup">
+                <span class="icon">⚙️</span>
+                <span>Setup</span>
+            </button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="tab-content">
+            
+            <!-- TAB: DASHBOARD (NEW - Default View) -->
+            <section id="tab-dashboard" class="tab-pane active">
+                
+                <!-- Quick Action Bar -->
+                <div class="quick-actions">
+                    <button class="btn-quick btn-primary" id="quickLogShot">
+                        <span class="btn-icon">⚡</span>
+                        Quick Log Shot
+                    </button>
+                    <button class="btn-quick btn-secondary" id="repeatLastShot">
+                        <span class="btn-icon">🔄</span>
+                        Repeat Last
+                    </button>
+                    <button class="btn-quick btn-secondary" id="viewAnalysis">
+                        <span class="btn-icon">🔬</span>
+                        Latest Analysis
+                    </button>
+                </div>
+
+                <!-- Current Coffee Banner -->
+                <div class="current-coffee-banner" id="coffeeBanner">
+                    <div class="banner-content">
+                        <h3>No coffee profile configured</h3>
+                        <p>Set up your current beans to start tracking shots</p>
+                        <button class="btn-secondary btn-small" id="setupCoffeeFromDashboard">Configure Coffee</button>
+                    </div>
+                </div>
+
+                <!-- Today's Summary -->
+                <div class="dashboard-section">
+                    <h2>Today's Summary</h2>
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <div class="card-icon">📈</div>
+                            <div class="card-content">
+                                <div class="card-value" id="todayShotsCount">0</div>
+                                <div class="card-label">Shots Pulled</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon">⭐</div>
+                            <div class="card-content">
+                                <div class="card-value" id="todayBestRating">-</div>
+                                <div class="card-label">Best Rating</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon">⏱️</div>
+                            <div class="card-content">
+                                <div class="card-value" id="todayAvgTime">-</div>
+                                <div class="card-label">Avg Time</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon">📊</div>
+                            <div class="card-content">
+                                <div class="card-value" id="consistency">-</div>
+                                <div class="card-label">Consistency</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Latest Shot Result (Auto-Analysis) -->
+                <div class="dashboard-section" id="latestShotSection" style="display: none;">
+                    <div class="section-header">
+                        <h2>Latest Shot Analysis</h2>
+                        <span class="timestamp" id="latestShotTime">Just now</span>
+                    </div>
+                    
+                    <div id="quickAnalysisResult"></div>
+                </div>
+
+                <!-- Recent Shots Quick View -->
+                <div class="dashboard-section">
+                    <h2>Recent Shots</h2>
+                    <div id="recentShotsQuick"></div>
+                </div>
+
+                <!-- Tips & Insights -->
+                <div class="dashboard-section">
+                    <h2>💡 Insights</h2>
+                    <div id="insightsContainer"></div>
+                </div>
+
+            </section>
+
+            <!-- TAB: LOG SHOT (Streamlined) -->
+            <section id="tab-shot" class="tab-pane">
+                
+                <!-- Coffee Info Bar (Always Visible) -->
+                <div class="sticky-info-bar">
+                    <div class="info-item">
+                        <span class="info-label">Coffee:</span>
+                        <span class="info-value" id="shotCoffeeName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Target:</span>
+                        <span class="info-value" id="shotTargetParams">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Days Old:</span>
+                        <span class="info-value" id="shotDaysOld">-</span>
+                    </div>
+                </div>
+
+                <div id="noProfileWarningShot" class="warning-box">
+                    ⚠️ Please configure Setup first
+                    <button class="btn-link" id="goToSetup">Go to Setup →</button>
+                </div>
+
+                <form id="shotForm" class="hidden">
+                    
+                    <!-- Essential Parameters (Always visible) -->
+                    <div class="form-section compact">
+                        <h3>Essential Parameters</h3>
+                        <div class="form-grid-compact">
+                            <div class="form-group">
+                                <label for="actualDose">Dose (g) *</label>
+                                <input type="number" id="actualDose" step="0.1" min="7" max="30" 
+                                       placeholder="18.0" required>
+                                <small id="doseVariance"></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="actualYield">Yield (g) *</label>
+                                <input type="number" id="actualYield" step="0.1" min="10" max="120" 
+                                       placeholder="36.0" required>
+                                <small id="actualRatio"></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="actualTime">Time (s) *</label>
+                                <input type="number" id="actualTime" step="0.1" min="5" max="120" 
+                                       placeholder="28.0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brewTemp">Temp (°C) *</label>
+                                <input type="number" id="brewTemp" step="0.1" min="85" max="98" 
+                                       placeholder="92.0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="grinderSetting">Grinder Setting *</label>
+                                <input type="text" id="grinderSetting" placeholder="e.g., 15" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Tasting (Simplified) -->
+                    <div class="form-section compact">
+                        <h3>Quick Taste Check</h3>
+                        <div class="quick-taste-buttons">
+                            <button type="button" class="taste-btn" data-taste="perfect">😊 Perfect</button>
+                            <button type="button" class="taste-btn" data-taste="sour">😖 Sour</button>
+                            <button type="button" class="taste-btn" data-taste="bitter">😤 Bitter</button>
+                            <button type="button" class="taste-btn" data-taste="weak">😐 Weak</button>
+                            <button type="button" class="taste-btn" data-taste="astringent">😣 Harsh</button>
+                        </div>
+                    </div>
+
+                    <!-- Rating (Visual Stars) -->
+                    <div class="form-section compact">
+                        <h3>Rating</h3>
+                        <div class="star-rating">
+                            <input type="radio" name="rating" id="star10" value="10">
+                            <label for="star10">★</label>
+                            <input type="radio" name="rating" id="star9" value="9">
+                            <label for="star9">★</label>
+                            <input type="radio" name="rating" id="star8" value="8">
+                            <label for="star8">★</label>
+                            <input type="radio" name="rating" id="star7" value="7" checked>
+                            <label for="star7">★</label>
+                            <input type="radio" name="rating" id="star6" value="6">
+                            <label for="star6">★</label>
+                            <input type="radio" name="rating" id="star5" value="5">
+                            <label for="star5">★</label>
+                            <input type="radio" name="rating" id="star4" value="4">
+                            <label for="star4">★</label>
+                            <input type="radio" name="rating" id="star3" value="3">
+                            <label for="star3">★</label>
+                            <input type="radio" name="rating" id="star2" value="2">
+                            <label for="star2">★</label>
+                            <input type="radio" name="rating" id="star1" value="1">
+                            <label for="star1">★</label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Details (Collapsible) -->
+                    <div class="form-section compact">
+                        <button type="button" class="section-toggle" id="toggleAdvanced">
+                            <span class="toggle-icon">▶</span>
+                            Advanced Details (Optional)
+                        </button>
+                        <div class="collapsible-content" id="advancedFields" style="display: none;">
+                            
+                            <div class="form-grid-compact">
+                                <div class="form-group">
+                                    <label for="pressure">Pressure (bar)</label>
+                                    <input type="number" id="pressure" step="0.1" min="0" max="12" placeholder="9.0">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="ambientTemp">Ambient Temp (°C)</label>
+                                    <input type="number" id="ambientTemp" step="0.1" placeholder="21">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="channelingObserved">Channeling?</label>
+                                    <select id="channelingObserved">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes</option>
+                                        <option value="suspected">Suspected</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="puckCondition">Puck Condition</label>
+                                    <select id="puckCondition">
+                                        <option value="">-</option>
+                                        <option value="dry-intact">Dry & Intact</option>
+                                        <option value="wet-intact">Wet but Intact</option>
+                                        <option value="broken">Broken</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Full Tasting Notes -->
+                            <div class="form-group">
+                                <label>Detailed Tasting Notes</label>
+                                <div class="checkbox-grid-compact">
+                                    <label><input type="checkbox" name="tasting" value="sour"> Sour</label>
+                                    <label><input type="checkbox" name="tasting" value="bitter"> Bitter</label>
+                                    <label><input type="checkbox" name="tasting" value="sweet"> Sweet</label>
+                                    <label><input type="checkbox" name="tasting" value="balanced"> Balanced</label>
+                                    <label><input type="checkbox" name="tasting" value="fruity"> Fruity</label>
+                                    <label><input type="checkbox" name="tasting" value="chocolate"> Chocolate</label>
+                                    <label><input type="checkbox" name="tasting" value="nutty"> Nutty</label>
+                                    <label><input type="checkbox" name="tasting" value="creamy"> Creamy</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="tastingNotes">Additional Notes</label>
+                                <textarea id="tastingNotes" rows="2" placeholder="Optional notes..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="button-group sticky-actions">
+                        <button type="submit" class="btn-primary btn-large" id="saveShot">
+                            Save & Analyze
+                        </button>
+                        <button type="button" class="btn-secondary" id="resetShot">Clear</button>
+                    </div>
+
+                </form>
+            </section>
+
+            <!-- TAB: SETUP (Consolidated Equipment + Coffee) -->
+            <section id="tab-setup" class="tab-pane">
+                
+                <!-- Setup Wizard Steps -->
+                <div class="setup-wizard">
+                    <div class="wizard-steps">
+                        <div class="wizard-step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Equipment</div>
+                        </div>
+                        <div class="wizard-step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Coffee</div>
+                        </div>
+                        <div class="wizard-step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-label">History</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Equipment -->
+                <div class="wizard-content" id="setupStep1">
+                    <h2>Equipment Profile</h2>
+                    <p class="section-desc">One-time setup of your espresso gear</p>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="machineType">Espresso Machine *</label>
+                            <select id="machineType" required>
+                                <option value="">Select...</option>
+                                <option value="e61">E61 Heat Exchanger</option>
+                                <option value="dual-boiler">Dual Boiler</option>
+                                <option value="single-boiler">Single Boiler</option>
+                                <option value="lever">Lever Machine</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="grinderModel">Grinder Model *</label>
+                            <input type="text" id="grinderModel" placeholder="e.g., Niche Zero" required 
+                                   list="grinderSuggestions">
+                            <datalist id="grinderSuggestions">
+                                <option value="Niche Zero">
+                                <option value="Baratza Sette 270">
+                                <option value="Eureka Mignon">
+                                <option value="Mazzer Super Jolly">
+                                <option value="Comandante">
+                            </datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="grinderType">Burr Type *</label>
+                            <select id="grinderType" required>
+                                <option value="">Select...</option>
+                                <option value="flat-64mm">Flat 64mm</option>
+                                <option value="flat-83mm">Flat 83mm+</option>
+                                <option value="conical-small">Conical <58mm</option>
+                                <option value="conical-large">Conical 58mm+</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="basketType">Basket *</label>
+                            <select id="basketType" required>
+                                <option value="">Select...</option>
+                                <option value="vst-18">VST 18g</option>
+                                <option value="vst-20">VST 20g</option>
+                                <option value="vst-22">VST 22g</option>
+                                <option value="ims-18">IMS 18g</option>
+                                <option value="ims-20">IMS 20g</option>
+                                <option value="standard-18">Standard 18g</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-primary" id="saveEquipment">Save & Continue</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Coffee Profile -->
+                <div class="wizard-content hidden" id="setupStep2">
+                    <h2>Coffee Profile</h2>
+                    <p class="section-desc">Tell us about your current beans</p>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="beanName">Bean Name *</label>
+                            <input type="text" id="beanName" placeholder="e.g., Ethiopia Yirgacheffe" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="roaster">Roaster *</label>
+                            <input type="text" id="roaster" placeholder="e.g., Onyx Coffee" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="roastLevel">Roast Level *</label>
+                            <select id="roastLevel" required>
+                                <option value="">Select...</option>
+                                <option value="Light">Light</option>
+                                <option value="Light-Medium">Light-Medium</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Medium-Dark">Medium-Dark</option>
+                                <option value="Dark">Dark</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="roastDate">Roast Date *</label>
+                            <input type="date" id="roastDate" required>
+                            <small id="daysOffRoast"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="targetDose">Target Dose (g) *</label>
+                            <input type="number" id="targetDose" step="0.1" placeholder="18.0" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="targetYield">Target Yield (g) *</label>
+                            <input type="number" id="targetYield" step="0.1" placeholder="36.0" required>
+                            <small id="targetRatio"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="targetTimeMin">Target Time (s) *</label>
+                            <div class="range-input">
+                                <input type="number" id="targetTimeMin" placeholder="25" required>
+                                <span>to</span>
+                                <input type="number" id="targetTimeMax" placeholder="30" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-secondary" id="backToStep1">← Back</button>
+                        <button class="btn-primary" id="saveCoffeeProfile">Save & Continue</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: History & Export -->
+                <div class="wizard-content hidden" id="setupStep3">
+                    <h2>Shot History</h2>
+                    
+                    <div class="history-actions">
+                        <button class="btn-secondary" id="exportData">
+                            <span class="btn-icon">📥</span>
+                            Export to CSV
+                        </button>
+                        <button class="btn-secondary btn-danger" id="clearHistory">
+                            <span class="btn-icon">🗑️</span>
+                            Clear All Data
+                        </button>
+                    </div>
+
+                    <div id="historyTable"></div>
+                    
+                    <div class="button-group">
+                        <button class="btn-secondary" id="backToStep2">← Back</button>
+                        <button class="btn-primary" id="doneSetup">Done</button>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Espresso Shot Tracker v2.0 | Built with ☕ and science</p>
+            <div class="footer-links">
+                <button class="btn-link" id="showKeyboardShortcuts">⌨️ Shortcuts</button>
+                <button class="btn-link" id="showHelp">❓ Help</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcutsModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>⌨️ Keyboard Shortcuts</h3>
+            <div class="shortcuts-list">
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                    <span>Save current form</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>N</kbd>
+                    <span>Quick log shot</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>R</kbd>
+                    <span>Repeat last shot</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>1</kbd> - <kbd>3</kbd>
+                    <span>Switch tabs</span>
+                </div>
+            </div>
+            <button class="btn-secondary" id="closeShortcuts">Close</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/validation.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/diagnostics.js"></script>
+    <script src="js/ui-enhanced.js"></script>
+    <script src="js/app-enhanced.js"></script>
+</body>
+</html>
